@@ -17,6 +17,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     Gui
     QuickControls2
     Widgets
+    Network
 )
 
 find_package(KF6 REQUIRED COMPONENTS
@@ -26,6 +27,8 @@ find_package(KF6 REQUIRED COMPONENTS
     QQC2DesktopStyle
     IconThemes
 )
+
+find_package(OpenSSL REQUIRED)
 
 ecm_find_qmlmodule(org.kde.kirigami REQUIRED)
 

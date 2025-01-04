@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Komparsa
 Exec=komparsa
-Icon=kde
+Icon=internet-web-browser
 Type=Application
 Terminal=false
 Categories=Network
