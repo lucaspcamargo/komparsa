@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Komparsa
+Exec=komparsa
+Icon=kde
+Type=Application
+Terminal=false
+Categories=Network
