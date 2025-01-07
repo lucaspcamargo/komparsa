@@ -8,35 +8,84 @@ Kirigami.ApplicationWindow {
     // Unique identifier to reference this object
     id: root
 
-    width: 450
+    width: 1000
     height: 750
 
     title: i18nc("@title:window", "Komparsa")
     
     globalDrawer: Kirigami.GlobalDrawer {
+        title: root.title
+        titleIcon: "internet-web-browser"
+        modal: false
+        collapsible: true
+        collapsed: true
+        showHeaderWhenCollapsed: false
+
         actions: [
+            Kirigami.Action {
+                text: i18n("Library")
+                icon.name: "folder-library-symbolic"
+                onTriggered: { let on = checked; pageStack.clear(); if(!on) pageStack.push(libraryPage); pageStack.push(viewPage); }
+                checked: pageStack.get(0) === libraryPage;
+            },
+            Kirigami.Action {
+                text: i18n("Identities")
+                icon.name: "system-users-symbolic"
+                onTriggered: { let on = checked; pageStack.clear(); if (!on) pageStack.push(identitiesPage); pageStack.push(viewPage); }
+                checked: pageStack.get(0) === identitiesPage;
+            },
             Kirigami.Action {
                 text: i18n("About")
                 icon.name: "help-about"
-                onTriggered: pageStack.layers.push(aboutPage)
-            },
-            Kirigami.Action {
-                text: i18n("Quit")
-                icon.name: "application-exit-symbolic"
-                shortcut: StandardKey.Quit
-                onTriggered: Qt.quit()
+                onTriggered: { let on = checked; pageStack.clear(); if (!on) pageStack.push(aboutPage); pageStack.push(viewPage); }
+                checked: pageStack.get(0) === aboutPage;
             }
         ]
     }
-    
-    Component { 
-        id: aboutPage
-        Kirigami.AboutPage {
-            aboutData: Komparsa.About
+
+    pageStack.initialPage: [libraryPage, viewPage]
+
+
+    Kirigami.Page {
+        title: "Library"
+        id: libraryPage
+
+        ListView {
+            anchors.fill: parent
+            model: libraryModel
+            delegate: libraryDelegate
+        }
+        ListModel {
+            id: libraryModel
+            ListElement { displayName: "localhost"; url: "gemini://localhost/" }
+            ListElement { displayName: "camargo.eng.br"; doctitle: "Welcome!";  url: "gemini://camargo.eng.br/" }
+            ListElement { displayName: "geminiprotocol.net"; doctitle: "Gemini Project"; url: "gemini://geminiprotocol.net/" }
+            ListElement { displayName: "gemini.circumlunar.space/capcom/"; url: "gemini://gemini.circumlunar.space/capcom/" }
+            ListElement { displayName: "medusae.space"; url: "gemini://medusae.space/" }
+        }
+        Component {
+            id: libraryDelegate
+            Controls.ItemDelegate {
+                width: ListView.view.width
+                text: model.displayName + (model.doctitle? ` - ${model.doctitle}`:"")
+                icon.name: "globe-symbolic"
+                onClicked: { viewPage.currentURL = model.url; }
+            }
         }
     }
 
-    pageStack.initialPage: Kirigami.ScrollablePage {
+    Kirigami.Page {
+        id: identitiesPage
+        title: "Identities"
+    }
+
+    Kirigami.AboutPage {
+        id: aboutPage
+        aboutData: Komparsa.About
+    }
+
+
+    Kirigami.ScrollablePage {
         // main view
         id: viewPage
         
@@ -45,35 +94,68 @@ Kirigami.ApplicationWindow {
         
         Kirigami.Theme.colorSet: Kirigami.Theme.View
         
+        title: new URL(currentURL).host
+
+        header: Kirigami.AbstractApplicationHeader { contentItem: RowLayout { 
+            anchors.left: parent.left
+            anchors.right: parent.right
+
+            Kirigami.ActionTextField {
+                id: urlField
+                Layout.fillWidth: true
+                
+                text: viewPage.currentURL
+                placeholderText: "Type a gemini:// location..."
+
+                onAccepted: {
+                    viewPage.currentURL = urlField.text;
+                }
+                
+                leftActions: [Kirigami.Action {
+                    id: cryptoAction
+                    icon.name: "channel-secure-symbolic"
+                    icon.color: Theme.View.positiveTextColor
+                }]
+            }
+        } }
+        
         actions: [
             Kirigami.Action {
                 id: backAction
                 icon.name: "draw-arrow-back"
                 text: i18nc("@action:button", "Go Back")
                 onTriggered: {  }
+                displayHint: Kirigami.DisplayHint.IconOnly
             },
             Kirigami.Action {
                 id: forwardAction
                 icon.name: "draw-arrow-forward"
                 text: i18nc("@action:button", "Go Forward")
                 onTriggered: {  }
+                displayHint: Kirigami.DisplayHint.IconOnly
+            },
+            Kirigami.Action {
+                id: goHomeAction
+                icon.name: "go-home-symbolic"
+                text: i18nc("@action:button", "Go Home")
+                onTriggered: { viewPage.currentURL = "gemini://localhost/"; }
+                displayHint: Kirigami.DisplayHint.IconOnly
+            },
+            Kirigami.Action {
+                id: sourceAction
+                icon.name: "format-text-code-symbolic"
+                text: i18nc("@action:button", "View Source")
+                onTriggered: { }
+                displayHint: Kirigami.DisplayHint.IconOnly
+            },
+            Kirigami.Action {
+                id: downloadAction
+                icon.name: "download-symbolic"
+                text: i18nc("@action:button", "Download")
+                onTriggered: {  }
+                displayHint: Kirigami.DisplayHint.IconOnly
             }
         ]
-
-        
-        titleDelegate: Controls.TextField {
-            id: urlField
-            text: viewPage.currentURL
-            Layout.fillWidth: true
-        
-            validator: RegularExpressionValidator{ regularExpression: /^[a-z](?:[-a-z0-9\+\.])*:(?:\/\/(?:(?:%[0-9a-f][0-9a-f]|[-a-z0-9\._~\x{A0}-\x{D7FF}\x{F900}-\x{FDCF}\x{FDF0}-\x{FFEF}\x{10000}-\x{1FFFD}\x{20000}-\x{2FFFD}\x{30000}-\x{3FFFD}\x{40000}-\x{4FFFD}\x{50000}-\x{5FFFD}\x{60000}-\x{6FFFD}\x{70000}-\x{7FFFD}\x{80000}-\x{8FFFD}\x{90000}-\x{9FFFD}\x{A0000}-\x{AFFFD}\x{B0000}-\x{BFFFD}\x{C0000}-\x{CFFFD}\x{D0000}-\x{DFFFD}\x{E1000}-\x{EFFFD}!\$&'\(\)\*\+,;=:])*@)?(?:\[(?:(?:(?:[0-9a-f]{1,4}:){6}(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(?:\.(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3})|::(?:[0-9a-f]{1,4}:){5}(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(?:\.(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3})|(?:[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){4}(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(?:\.(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3})|(?:(?:[0-9a-f]{1,4}:){0,1}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){3}(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(?:\.(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3})|(?:(?:[0-9a-f]{1,4}:){0,2}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){2}(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(?:\.(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3})|(?:(?:[0-9a-f]{1,4}:){0,3}[0-9a-f]{1,4})?::[0-9a-f]{1,4}:(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(?:\.(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3})|(?:(?:[0-9a-f]{1,4}:){0,4}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(?:\.(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3})|(?:(?:[0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?::[0-9a-f]{1,4}|(?:(?:[0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4})?::)|v[0-9a-f]+\.[-a-z0-9\._~!\$&'\(\)\*\+,;=:]+)\]|(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(?:\.(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}|(?:%[0-9a-f][0-9a-f]|[-a-z0-9\._~\x{A0}-\x{D7FF}\x{F900}-\x{FDCF}\x{FDF0}-\x{FFEF}\x{10000}-\x{1FFFD}\x{20000}-\x{2FFFD}\x{30000}-\x{3FFFD}\x{40000}-\x{4FFFD}\x{50000}-\x{5FFFD}\x{60000}-\x{6FFFD}\x{70000}-\x{7FFFD}\x{80000}-\x{8FFFD}\x{90000}-\x{9FFFD}\x{A0000}-\x{AFFFD}\x{B0000}-\x{BFFFD}\x{C0000}-\x{CFFFD}\x{D0000}-\x{DFFFD}\x{E1000}-\x{EFFFD}!\$&'\(\)\*\+,;=])*)(?::[0-9]*)?(?:\/(?:(?:%[0-9a-f][0-9a-f]|[-a-z0-9\._~\x{A0}-\x{D7FF}\x{F900}-\x{FDCF}\x{FDF0}-\x{FFEF}\x{10000}-\x{1FFFD}\x{20000}-\x{2FFFD}\x{30000}-\x{3FFFD}\x{40000}-\x{4FFFD}\x{50000}-\x{5FFFD}\x{60000}-\x{6FFFD}\x{70000}-\x{7FFFD}\x{80000}-\x{8FFFD}\x{90000}-\x{9FFFD}\x{A0000}-\x{AFFFD}\x{B0000}-\x{BFFFD}\x{C0000}-\x{CFFFD}\x{D0000}-\x{DFFFD}\x{E1000}-\x{EFFFD}!\$&'\(\)\*\+,;=:@]))*)*|\/(?:(?:(?:(?:%[0-9a-f][0-9a-f]|[-a-z0-9\._~\x{A0}-\x{D7FF}\x{F900}-\x{FDCF}\x{FDF0}-\x{FFEF}\x{10000}-\x{1FFFD}\x{20000}-\x{2FFFD}\x{30000}-\x{3FFFD}\x{40000}-\x{4FFFD}\x{50000}-\x{5FFFD}\x{60000}-\x{6FFFD}\x{70000}-\x{7FFFD}\x{80000}-\x{8FFFD}\x{90000}-\x{9FFFD}\x{A0000}-\x{AFFFD}\x{B0000}-\x{BFFFD}\x{C0000}-\x{CFFFD}\x{D0000}-\x{DFFFD}\x{E1000}-\x{EFFFD}!\$&'\(\)\*\+,;=:@]))+)(?:\/(?:(?:%[0-9a-f][0-9a-f]|[-a-z0-9\._~\x{A0}-\x{D7FF}\x{F900}-\x{FDCF}\x{FDF0}-\x{FFEF}\x{10000}-\x{1FFFD}\x{20000}-\x{2FFFD}\x{30000}-\x{3FFFD}\x{40000}-\x{4FFFD}\x{50000}-\x{5FFFD}\x{60000}-\x{6FFFD}\x{70000}-\x{7FFFD}\x{80000}-\x{8FFFD}\x{90000}-\x{9FFFD}\x{A0000}-\x{AFFFD}\x{B0000}-\x{BFFFD}\x{C0000}-\x{CFFFD}\x{D0000}-\x{DFFFD}\x{E1000}-\x{EFFFD}!\$&'\(\)\*\+,;=:@]))*)*)?|(?:(?:(?:%[0-9a-f][0-9a-f]|[-a-z0-9\._~\x{A0}-\x{D7FF}\x{F900}-\x{FDCF}\x{FDF0}-\x{FFEF}\x{10000}-\x{1FFFD}\x{20000}-\x{2FFFD}\x{30000}-\x{3FFFD}\x{40000}-\x{4FFFD}\x{50000}-\x{5FFFD}\x{60000}-\x{6FFFD}\x{70000}-\x{7FFFD}\x{80000}-\x{8FFFD}\x{90000}-\x{9FFFD}\x{A0000}-\x{AFFFD}\x{B0000}-\x{BFFFD}\x{C0000}-\x{CFFFD}\x{D0000}-\x{DFFFD}\x{E1000}-\x{EFFFD}!\$&'\(\)\*\+,;=:@]))+)(?:\/(?:(?:%[0-9a-f][0-9a-f]|[-a-z0-9\._~\x{A0}-\x{D7FF}\x{F900}-\x{FDCF}\x{FDF0}-\x{FFEF}\x{10000}-\x{1FFFD}\x{20000}-\x{2FFFD}\x{30000}-\x{3FFFD}\x{40000}-\x{4FFFD}\x{50000}-\x{5FFFD}\x{60000}-\x{6FFFD}\x{70000}-\x{7FFFD}\x{80000}-\x{8FFFD}\x{90000}-\x{9FFFD}\x{A0000}-\x{AFFFD}\x{B0000}-\x{BFFFD}\x{C0000}-\x{CFFFD}\x{D0000}-\x{DFFFD}\x{E1000}-\x{EFFFD}!\$&'\(\)\*\+,;=:@]))*)*|(?!(?:%[0-9a-f][0-9a-f]|[-a-z0-9\._~\x{A0}-\x{D7FF}\x{F900}-\x{FDCF}\x{FDF0}-\x{FFEF}\x{10000}-\x{1FFFD}\x{20000}-\x{2FFFD}\x{30000}-\x{3FFFD}\x{40000}-\x{4FFFD}\x{50000}-\x{5FFFD}\x{60000}-\x{6FFFD}\x{70000}-\x{7FFFD}\x{80000}-\x{8FFFD}\x{90000}-\x{9FFFD}\x{A0000}-\x{AFFFD}\x{B0000}-\x{BFFFD}\x{C0000}-\x{CFFFD}\x{D0000}-\x{DFFFD}\x{E1000}-\x{EFFFD}!\$&'\(\)\*\+,;=:@])))(?:\?(?:(?:%[0-9a-f][0-9a-f]|[-a-z0-9\._~\x{A0}-\x{D7FF}\x{F900}-\x{FDCF}\x{FDF0}-\x{FFEF}\x{10000}-\x{1FFFD}\x{20000}-\x{2FFFD}\x{30000}-\x{3FFFD}\x{40000}-\x{4FFFD}\x{50000}-\x{5FFFD}\x{60000}-\x{6FFFD}\x{70000}-\x{7FFFD}\x{80000}-\x{8FFFD}\x{90000}-\x{9FFFD}\x{A0000}-\x{AFFFD}\x{B0000}-\x{BFFFD}\x{C0000}-\x{CFFFD}\x{D0000}-\x{DFFFD}\x{E1000}-\x{EFFFD}!\$&'\(\)\*\+,;=:@])|[\x{E000}-\x{F8FF}\x{F0000}-\x{FFFFD}\x{100000}-\x{10FFFD}\/\?])*)?(?:\#(?:(?:%[0-9a-f][0-9a-f]|[-a-z0-9\._~\x{A0}-\x{D7FF}\x{F900}-\x{FDCF}\x{FDF0}-\x{FFEF}\x{10000}-\x{1FFFD}\x{20000}-\x{2FFFD}\x{30000}-\x{3FFFD}\x{40000}-\x{4FFFD}\x{50000}-\x{5FFFD}\x{60000}-\x{6FFFD}\x{70000}-\x{7FFFD}\x{80000}-\x{8FFFD}\x{90000}-\x{9FFFD}\x{A0000}-\x{AFFFD}\x{B0000}-\x{BFFFD}\x{C0000}-\x{CFFFD}\x{D0000}-\x{DFFFD}\x{E1000}-\x{EFFFD}!\$&'\(\)\*\+,;=:@])|[\/\?])*)?$/ }
-            
-            onAccepted: {
-                viewPage.currentURL = urlField.text;
-            }
-            
-            
-        }
         
         Controls.TextArea {
             id: renderArea
@@ -82,6 +164,24 @@ Kirigami.ApplicationWindow {
             wrapMode: Text.WordWrap
             readOnly: true
             background: null
+            selectByMouse: true
+
+            HoverHandler {
+                enabled: parent.hoveredLink
+                cursorShape: Qt.PointingHandCursor
+            }
+            onLinkActivated: (url) => {
+                let curr = new URL(viewPage.currentURL);
+                try
+                {
+                    const newUrl = new URL(url, viewPage.currentURL);
+                    viewPage.currentURL = newUrl;
+                }
+                catch (error)
+                {
+                    console.log("invalid URL:", error);
+                }
+            }
             
             text: ""
             
@@ -98,6 +198,8 @@ Kirigami.ApplicationWindow {
                 }
             }
         }
+
+
         
         Kirigami.PromptDialog {
             id: certificateDialog

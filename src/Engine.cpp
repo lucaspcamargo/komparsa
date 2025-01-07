@@ -177,10 +177,12 @@ void Engine::retrieve(QString urlStr)
             {
                 // was reading body, read the rest and dispatch
                 m_payload += m_sock->readAll();
-                if(m_meta == QStringLiteral("text/gemini"))
+                if(m_meta.startsWith(QStringLiteral("text/gemini")))
                     Q_EMIT retrievalDone(false, urlStr, gemtextToHTML(QString::fromUtf8(m_payload)));
-                else if(m_meta == QStringLiteral("text/plain"))
+                else if(m_meta.startsWith(QStringLiteral("text/plain")))
                     Q_EMIT retrievalDone(false, urlStr, QStringLiteral("<pre>%1</pre>").arg(QString::fromUtf8(m_payload)));
+                else
+                    qDebug() << "Something weird on the pipe...";
             }
             else if(m_state != ProtocolState::DONE)
             {

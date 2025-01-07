@@ -10,7 +10,7 @@ include(KDECompilerSettings NO_POLICY_SCOPE)
 include(ECMFindQmlModule)
 include(ECMQmlModule)
 
-find_package(Qt6 REQUIRED COMPONENTS
+find_package(Qt6 REQUIRED COMPONENTS 
     Core
     Quick
     Test
@@ -34,6 +34,6 @@ ecm_find_qmlmodule(org.kde.kirigami REQUIRED)
 
 add_subdirectory(src)
 
-install(PROGRAMS eng.br.camargo.komparsa.desktop DESTINATION ${KDE_INSTALL_APPDIR})
+install(PROGRAMS br.eng.camargo.komparsa.desktop DESTINATION ${KDE_INSTALL_APPDIR})
 
 feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)
